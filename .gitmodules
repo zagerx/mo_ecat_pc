@@ -1,0 +1,3 @@
+[submodule "mo_ecat_core"]
+	path = mo_ecat_core
+	url = https://github.com/zagerx/mo_ecat_core.git
