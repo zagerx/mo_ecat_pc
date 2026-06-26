@@ -102,9 +102,9 @@ QString ToDisplayString(const UiRuntimeState &state)
     case UiMasterMode::kRun:
         return prefix + QStringLiteral("运行态");
     case UiMasterMode::kFault:
-        return QStringLiteral("故障态");
+        return prefix + QStringLiteral("故障态");
     case UiMasterMode::kEmergencyStop:
-        return QStringLiteral("紧急停止态");
+        return prefix + QStringLiteral("紧急停止态");
     case UiMasterMode::kUnknown:
         return QStringLiteral("未知状态");
     }
@@ -232,6 +232,9 @@ void EcatWorker::EnsureMaster()
                                        mo_ecat::MasterState) {
         EmitRuntimeState();
         RefreshSnapshot();
+    };
+    master_->on_runtime_state_changed = [this](mo_ecat::MasterRuntimeState state) {
+        emit MasterStateChanged(ConvertRuntimeState(state));
     };
     master_->on_log_message = [this](const std::string &level,
                                      const std::string &source,
