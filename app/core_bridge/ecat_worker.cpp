@@ -57,58 +57,63 @@ bool HasRawSocketPermission()
 
 QString ToDisplayString(const UiRuntimeState &state)
 {
-    auto transition_prefix = [](UiTransitionStage transition) {
-        switch (transition) {
-        case UiTransitionStage::kEntering:
-            return QStringLiteral("进入");
-        case UiTransitionStage::kExiting:
-            return QStringLiteral("退出");
-        case UiTransitionStage::kStable:
-        case UiTransitionStage::kUnknown:
-            return QString();
-        }
-        return QString();
-    };
+    mo_ecat::MasterRuntimeState core_state;
 
-    auto prepare_stage = [](UiPrepareStage stage) {
-        switch (stage) {
-        case UiPrepareStage::kAdapterReady:
-            return QStringLiteral("网卡就绪");
-        case UiPrepareStage::kTopologyDiscovered:
-            return QStringLiteral("拓扑已发现");
-        case UiPrepareStage::kPreOpMaintenance:
-            return QStringLiteral("PREOP维护");
-        case UiPrepareStage::kSafeOpReady:
-            return QStringLiteral("SAFEOP就绪");
-        case UiPrepareStage::kNone:
-            return QString();
-        case UiPrepareStage::kUnknown:
-            return QStringLiteral("未知阶段");
-        }
-        return QString();
-    };
-
-    const QString prefix = transition_prefix(state.transition);
     switch (state.mode) {
     case UiMasterMode::kInit:
-        return prefix + QStringLiteral("初始化态");
-    case UiMasterMode::kPrepare: {
-        const QString stage = prepare_stage(state.prepare_stage);
-        if (stage.isEmpty()) {
-            return prefix + QStringLiteral("准备态");
-        }
-        return prefix + QStringLiteral("准备态 / ") + stage;
-    }
+        core_state.mode = mo_ecat::MasterMode::kInit;
+        break;
+    case UiMasterMode::kPrepare:
+        core_state.mode = mo_ecat::MasterMode::kPrepare;
+        break;
     case UiMasterMode::kRun:
-        return prefix + QStringLiteral("运行态");
+        core_state.mode = mo_ecat::MasterMode::kRun;
+        break;
     case UiMasterMode::kFault:
-        return prefix + QStringLiteral("故障态");
+        core_state.mode = mo_ecat::MasterMode::kFault;
+        break;
     case UiMasterMode::kEmergencyStop:
-        return prefix + QStringLiteral("紧急停止态");
+        core_state.mode = mo_ecat::MasterMode::kEmergencyStop;
+        break;
     case UiMasterMode::kUnknown:
         return QStringLiteral("未知状态");
     }
-    return QStringLiteral("未知状态");
+
+    switch (state.transition) {
+    case UiTransitionStage::kEntering:
+        core_state.transition = mo_ecat::TransitionStage::kEntering;
+        break;
+    case UiTransitionStage::kStable:
+        core_state.transition = mo_ecat::TransitionStage::kStable;
+        break;
+    case UiTransitionStage::kExiting:
+        core_state.transition = mo_ecat::TransitionStage::kExiting;
+        break;
+    case UiTransitionStage::kUnknown:
+        return QStringLiteral("未知状态");
+    }
+
+    switch (state.prepare_stage) {
+    case UiPrepareStage::kNone:
+        core_state.prepare_stage = mo_ecat::PrepareStage::kNone;
+        break;
+    case UiPrepareStage::kAdapterReady:
+        core_state.prepare_stage = mo_ecat::PrepareStage::kAdapterReady;
+        break;
+    case UiPrepareStage::kTopologyDiscovered:
+        core_state.prepare_stage = mo_ecat::PrepareStage::kTopologyDiscovered;
+        break;
+    case UiPrepareStage::kPreOpMaintenance:
+        core_state.prepare_stage = mo_ecat::PrepareStage::kPreOpMaintenance;
+        break;
+    case UiPrepareStage::kSafeOpReady:
+        core_state.prepare_stage = mo_ecat::PrepareStage::kSafeOpReady;
+        break;
+    case UiPrepareStage::kUnknown:
+        return QStringLiteral("未知状态");
+    }
+
+    return QString::fromStdString(mo_ecat::ToDisplayString(core_state));
 }
 
 EcatWorker::EcatWorker(QObject *parent)
