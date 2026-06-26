@@ -22,7 +22,7 @@ enum class UiMasterState {
 };
 
 struct UiMasterConfig {
-    QString interface_name = QStringLiteral("eth0");
+    QString interface_name = QStringLiteral("enp0s31f6");
     int cycle_time_us = 1000;
     bool use_dc = true;
 };

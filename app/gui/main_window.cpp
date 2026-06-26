@@ -27,7 +27,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     auto *config_box = new QGroupBox(QStringLiteral("Master"), central);
     auto *config_layout = new QFormLayout(config_box);
-    interface_edit_ = new QLineEdit(QStringLiteral("eth0"), config_box);
+    interface_edit_ = new QLineEdit(QStringLiteral("enp0s31f6"), config_box);
     state_value_ = new QLabel(ToDisplayString(UiMasterState::kUninitialized), config_box);
     config_layout->addRow(QStringLiteral("Interface"), interface_edit_);
     config_layout->addRow(QStringLiteral("State"), state_value_);
