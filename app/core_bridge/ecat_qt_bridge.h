@@ -27,7 +27,7 @@ public slots:
     void Stop();
 
 signals:
-    void MasterStateChanged(UiMasterState state);
+    void MasterStateChanged(UiRuntimeState state);
     void SlaveListUpdated(QVector<UiSlaveInfo> slaves);
     void LogReceived(UiLogRecord record);
     void OperationFailed(QString command, QString reason);

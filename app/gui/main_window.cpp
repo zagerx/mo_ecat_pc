@@ -28,7 +28,7 @@ MainWindow::MainWindow(QWidget *parent)
     auto *config_box = new QGroupBox(QStringLiteral("Master"), central);
     auto *config_layout = new QFormLayout(config_box);
     interface_edit_ = new QLineEdit(QStringLiteral("enp0s31f6"), config_box);
-    state_value_ = new QLabel(ToDisplayString(UiMasterState::kUninitialized), config_box);
+    state_value_ = new QLabel(ToDisplayString(UiRuntimeState{}), config_box);
     config_layout->addRow(QStringLiteral("Interface"), interface_edit_);
     config_layout->addRow(QStringLiteral("State"), state_value_);
 
@@ -86,7 +86,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(stop_button_, &QPushButton::clicked, this, &MainWindow::stopRequested);
 }
 
-void MainWindow::OnMasterStateChanged(UiMasterState state)
+void MainWindow::OnMasterStateChanged(UiRuntimeState state)
 {
     state_value_->setText(ToDisplayString(state));
 }
@@ -136,4 +136,3 @@ void MainWindow::AppendLog(const QString &level, const QString &message)
 }
 
 } // namespace mo_ecat_pc
-

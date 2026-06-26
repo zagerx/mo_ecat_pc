@@ -29,7 +29,7 @@ signals:
     void stopRequested();
 
 public slots:
-    void OnMasterStateChanged(UiMasterState state);
+    void OnMasterStateChanged(UiRuntimeState state);
     void OnSlaveListUpdated(QVector<UiSlaveInfo> slaves);
     void OnLogReceived(UiLogRecord record);
     void OnOperationFailed(QString command, QString reason);
@@ -53,4 +53,3 @@ private:
 };
 
 } // namespace mo_ecat_pc
-

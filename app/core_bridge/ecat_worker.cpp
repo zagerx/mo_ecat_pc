@@ -55,29 +55,60 @@ bool HasRawSocketPermission()
 
 } // namespace
 
-QString ToDisplayString(UiMasterState state)
+QString ToDisplayString(const UiRuntimeState &state)
 {
-    switch (state) {
-    case UiMasterState::kUninitialized:
-        return QStringLiteral("Uninitialized");
-    case UiMasterState::kAdapterReady:
-        return QStringLiteral("AdapterReady");
-    case UiMasterState::kScanned:
-        return QStringLiteral("Scanned");
-    case UiMasterState::kMaintenance:
-        return QStringLiteral("Maintenance");
-    case UiMasterState::kReadyToRun:
-        return QStringLiteral("ReadyToRun");
-    case UiMasterState::kOperational:
-        return QStringLiteral("Operational");
-    case UiMasterState::kFault:
-        return QStringLiteral("Fault");
-    case UiMasterState::kEmergencyStop:
-        return QStringLiteral("EmergencyStop");
-    case UiMasterState::kUnknown:
-        return QStringLiteral("Unknown");
+    auto transition_prefix = [](UiTransitionStage transition) {
+        switch (transition) {
+        case UiTransitionStage::kEntering:
+            return QStringLiteral("进入");
+        case UiTransitionStage::kExiting:
+            return QStringLiteral("退出");
+        case UiTransitionStage::kStable:
+        case UiTransitionStage::kUnknown:
+            return QString();
+        }
+        return QString();
+    };
+
+    auto prepare_stage = [](UiPrepareStage stage) {
+        switch (stage) {
+        case UiPrepareStage::kAdapterReady:
+            return QStringLiteral("网卡就绪");
+        case UiPrepareStage::kTopologyDiscovered:
+            return QStringLiteral("拓扑已发现");
+        case UiPrepareStage::kPreOpMaintenance:
+            return QStringLiteral("PREOP维护");
+        case UiPrepareStage::kSafeOpReady:
+            return QStringLiteral("SAFEOP就绪");
+        case UiPrepareStage::kNone:
+            return QString();
+        case UiPrepareStage::kUnknown:
+            return QStringLiteral("未知阶段");
+        }
+        return QString();
+    };
+
+    const QString prefix = transition_prefix(state.transition);
+    switch (state.mode) {
+    case UiMasterMode::kInit:
+        return prefix + QStringLiteral("初始化态");
+    case UiMasterMode::kPrepare: {
+        const QString stage = prepare_stage(state.prepare_stage);
+        if (stage.isEmpty()) {
+            return prefix + QStringLiteral("准备态");
+        }
+        return prefix + QStringLiteral("准备态 / ") + stage;
     }
-    return QStringLiteral("Unknown");
+    case UiMasterMode::kRun:
+        return prefix + QStringLiteral("运行态");
+    case UiMasterMode::kFault:
+        return QStringLiteral("故障态");
+    case UiMasterMode::kEmergencyStop:
+        return QStringLiteral("紧急停止态");
+    case UiMasterMode::kUnknown:
+        return QStringLiteral("未知状态");
+    }
+    return QStringLiteral("未知状态");
 }
 
 EcatWorker::EcatWorker(QObject *parent)
@@ -106,7 +137,7 @@ void EcatWorker::StartServiceLoop()
     }
 
     service_timer_->start(1);
-    emit MasterStateChanged(ConvertState(master_->GetState()));
+    EmitRuntimeState();
 }
 
 void EcatWorker::InitializeAdapter(UiMasterConfig config)
@@ -198,8 +229,8 @@ void EcatWorker::EnsureMaster()
 
     master_ = std::make_unique<mo_ecat::MoEcatMaster>();
     master_->on_state_changed = [this](mo_ecat::MasterState,
-                                       mo_ecat::MasterState new_state) {
-        emit MasterStateChanged(ConvertState(new_state));
+                                       mo_ecat::MasterState) {
+        EmitRuntimeState();
         RefreshSnapshot();
     };
     master_->on_log_message = [this](const std::string &level,
@@ -217,7 +248,7 @@ void EcatWorker::RefreshSnapshot()
         return;
     }
 
-    emit MasterStateChanged(ConvertState(master_->GetState()));
+    EmitRuntimeState();
 
     QVector<UiSlaveInfo> slaves;
     const auto core_slaves = master_->GetSlaveInfos();
@@ -245,27 +276,67 @@ void EcatWorker::ReportCommandResult(const QString &command, bool ok)
     emit OperationFailed(command, reason);
 }
 
-UiMasterState EcatWorker::ConvertState(mo_ecat::MasterState state)
+void EcatWorker::EmitRuntimeState()
 {
-    switch (state) {
-    case mo_ecat::MasterState::kUninitialized:
-        return UiMasterState::kUninitialized;
-    case mo_ecat::MasterState::kAdapterReady:
-        return UiMasterState::kAdapterReady;
-    case mo_ecat::MasterState::kScanned:
-        return UiMasterState::kScanned;
-    case mo_ecat::MasterState::kMaintenance:
-        return UiMasterState::kMaintenance;
-    case mo_ecat::MasterState::kReadyToRun:
-        return UiMasterState::kReadyToRun;
-    case mo_ecat::MasterState::kOperational:
-        return UiMasterState::kOperational;
-    case mo_ecat::MasterState::kFault:
-        return UiMasterState::kFault;
-    case mo_ecat::MasterState::kEmergencyStop:
-        return UiMasterState::kEmergencyStop;
+    if (master_ == nullptr) {
+        return;
     }
-    return UiMasterState::kUnknown;
+    emit MasterStateChanged(ConvertRuntimeState(master_->GetRuntimeState()));
+}
+
+UiRuntimeState EcatWorker::ConvertRuntimeState(const mo_ecat::MasterRuntimeState &state)
+{
+    UiRuntimeState ui_state;
+
+    switch (state.mode) {
+    case mo_ecat::MasterMode::kInit:
+        ui_state.mode = UiMasterMode::kInit;
+        break;
+    case mo_ecat::MasterMode::kPrepare:
+        ui_state.mode = UiMasterMode::kPrepare;
+        break;
+    case mo_ecat::MasterMode::kRun:
+        ui_state.mode = UiMasterMode::kRun;
+        break;
+    case mo_ecat::MasterMode::kFault:
+        ui_state.mode = UiMasterMode::kFault;
+        break;
+    case mo_ecat::MasterMode::kEmergencyStop:
+        ui_state.mode = UiMasterMode::kEmergencyStop;
+        break;
+    }
+
+    switch (state.transition) {
+    case mo_ecat::TransitionStage::kEntering:
+        ui_state.transition = UiTransitionStage::kEntering;
+        break;
+    case mo_ecat::TransitionStage::kStable:
+        ui_state.transition = UiTransitionStage::kStable;
+        break;
+    case mo_ecat::TransitionStage::kExiting:
+        ui_state.transition = UiTransitionStage::kExiting;
+        break;
+    }
+
+    switch (state.prepare_stage) {
+    case mo_ecat::PrepareStage::kNone:
+        ui_state.prepare_stage = UiPrepareStage::kNone;
+        break;
+    case mo_ecat::PrepareStage::kAdapterReady:
+        ui_state.prepare_stage = UiPrepareStage::kAdapterReady;
+        break;
+    case mo_ecat::PrepareStage::kTopologyDiscovered:
+        ui_state.prepare_stage = UiPrepareStage::kTopologyDiscovered;
+        break;
+    case mo_ecat::PrepareStage::kPreOpMaintenance:
+        ui_state.prepare_stage = UiPrepareStage::kPreOpMaintenance;
+        break;
+    case mo_ecat::PrepareStage::kSafeOpReady:
+        ui_state.prepare_stage = UiPrepareStage::kSafeOpReady;
+        break;
+    }
+
+    return ui_state;
 }
 
 UiSlaveInfo EcatWorker::ConvertSlaveInfo(const mo_ecat::SlaveInfo &info)

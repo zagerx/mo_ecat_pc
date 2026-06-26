@@ -11,6 +11,7 @@ namespace mo_ecat
 {
 class MoEcatMaster;
 enum class MasterState;
+struct MasterRuntimeState;
 struct SlaveInfo;
 } // namespace mo_ecat
 
@@ -35,7 +36,7 @@ public slots:
     void StopMaster();
 
 signals:
-    void MasterStateChanged(UiMasterState state);
+    void MasterStateChanged(UiRuntimeState state);
     void SlaveListUpdated(QVector<UiSlaveInfo> slaves);
     void LogReceived(UiLogRecord record);
     void OperationFailed(QString command, QString reason);
@@ -47,8 +48,9 @@ private:
     void EnsureMaster();
     void RefreshSnapshot();
     void ReportCommandResult(const QString &command, bool ok);
+    void EmitRuntimeState();
 
-    static UiMasterState ConvertState(mo_ecat::MasterState state);
+    static UiRuntimeState ConvertRuntimeState(const mo_ecat::MasterRuntimeState &state);
     static UiSlaveInfo ConvertSlaveInfo(const mo_ecat::SlaveInfo &info);
 
     std::unique_ptr<mo_ecat::MoEcatMaster> master_;
@@ -56,4 +58,3 @@ private:
 };
 
 } // namespace mo_ecat_pc
-

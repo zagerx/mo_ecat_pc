@@ -8,7 +8,7 @@ namespace mo_ecat_pc
 EcatQtBridge::EcatQtBridge(QObject *parent)
     : QObject(parent)
 {
-    qRegisterMetaType<UiMasterState>();
+    qRegisterMetaType<UiRuntimeState>();
     qRegisterMetaType<UiMasterConfig>();
     qRegisterMetaType<UiSlaveInfo>();
     qRegisterMetaType<QVector<UiSlaveInfo>>();
@@ -94,4 +94,3 @@ void EcatQtBridge::Stop()
 }
 
 } // namespace mo_ecat_pc
-

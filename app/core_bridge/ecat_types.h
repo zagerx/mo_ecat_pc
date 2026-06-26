@@ -9,16 +9,35 @@
 namespace mo_ecat_pc
 {
 
-enum class UiMasterState {
-    kUninitialized,
-    kAdapterReady,
-    kScanned,
-    kMaintenance,
-    kReadyToRun,
-    kOperational,
+enum class UiMasterMode {
+    kInit,
+    kPrepare,
+    kRun,
     kFault,
     kEmergencyStop,
     kUnknown,
+};
+
+enum class UiTransitionStage {
+    kEntering,
+    kStable,
+    kExiting,
+    kUnknown,
+};
+
+enum class UiPrepareStage {
+    kNone,
+    kAdapterReady,
+    kTopologyDiscovered,
+    kPreOpMaintenance,
+    kSafeOpReady,
+    kUnknown,
+};
+
+struct UiRuntimeState {
+    UiMasterMode mode = UiMasterMode::kInit;
+    UiTransitionStage transition = UiTransitionStage::kStable;
+    UiPrepareStage prepare_stage = UiPrepareStage::kNone;
 };
 
 struct UiMasterConfig {
@@ -63,15 +82,14 @@ struct SdoReadResult {
     QString error;
 };
 
-QString ToDisplayString(UiMasterState state);
+QString ToDisplayString(const UiRuntimeState &state);
 
 } // namespace mo_ecat_pc
 
-Q_DECLARE_METATYPE(mo_ecat_pc::UiMasterState)
+Q_DECLARE_METATYPE(mo_ecat_pc::UiRuntimeState)
 Q_DECLARE_METATYPE(mo_ecat_pc::UiMasterConfig)
 Q_DECLARE_METATYPE(mo_ecat_pc::UiSlaveInfo)
 Q_DECLARE_METATYPE(QVector<mo_ecat_pc::UiSlaveInfo>)
 Q_DECLARE_METATYPE(mo_ecat_pc::UiLogRecord)
 Q_DECLARE_METATYPE(mo_ecat_pc::SdoReadRequest)
 Q_DECLARE_METATYPE(mo_ecat_pc::SdoReadResult)
-
