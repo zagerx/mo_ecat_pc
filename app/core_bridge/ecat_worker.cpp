@@ -233,11 +233,6 @@ void EcatWorker::EnsureMaster()
     }
 
     master_ = std::make_unique<mo_ecat::MoEcatMaster>();
-    master_->on_state_changed = [this](mo_ecat::MasterState,
-                                       mo_ecat::MasterState) {
-        EmitRuntimeState();
-        RefreshSnapshot();
-    };
     master_->on_runtime_state_changed = [this](mo_ecat::MasterRuntimeState state) {
         emit MasterStateChanged(ConvertRuntimeState(state));
     };

@@ -26,17 +26,32 @@ mo_ecat::MoEcatMaster
 
 ## 3. 生命周期接口
 
+### 3.1 新分层生命周期接口（推荐）
+
 | 接口 | 当前状态 | 说明 |
 |------|----------|------|
-| `InitializeAdapter(const EcMasterConfig&)` | 已实现 | 初始化网卡和主站配置 |
-| `Scan()` | 已实现 | 扫描 EtherCAT 从站 |
-| `EnterMaintenance()` | 已实现 | 进入维护/PREOP 阶段 |
-| `PrepareRun()` | 已实现 | 配置 PDO、SAFEOP、DC，准备运行 |
-| `StartOperation()` | 已实现 | 请求进入 OPERATIONAL |
-| `BackToMaintenance()` | 已实现 | 从 ReadyToRun/Operational 回到 Maintenance |
-| `Stop()` | 已实现 | 停止主站 |
+| `EnterPrepare(const EcMasterConfig&)` | 已实现 | 初始化网卡和主站配置，进入准备态/网卡就绪 |
+| `DiscoverTopology()` | 已实现 | 扫描 EtherCAT 从站 |
+| `EnterPreOpMaintenance()` | 已实现 | 进入准备态/PREOP 维护 |
+| `EnterSafeOpReady()` | 已实现 | 配置 PDO、SAFEOP、DC，进入准备态/SAFEOP 就绪 |
+| `EnterRun()` | 已实现 | 请求进入 OPERATIONAL |
+| `ExitRunToPrepare()` | 已实现 | 从运行态回到准备态/PREOP 维护 |
+| `ExitSafeOpToPrepare()` | 已实现 | 从准备态/SAFEOP 就绪回到 PREOP 维护 |
+| `Shutdown()` | 已实现 | 停止主站并回到初始化态 |
+| `BackToMaintenance()` | 已实现 | 根据当前状态自动选择 `ExitRunToPrepare` 或 `ExitSafeOpToPrepare` |
 | `RequestFault(const std::string&)` | 已实现 | 外部请求进入 Fault |
 | `RequestEmergencyStop(const std::string&)` | 已实现 | 外部请求进入 EmergencyStop |
+
+### 3.2 旧生命周期接口（兼容包装，内部转调新接口）
+
+| 接口 | 当前状态 | 说明 |
+|------|----------|------|
+| `InitializeAdapter(const EcMasterConfig&)` | 兼容包装 | 等价于 `EnterPrepare` |
+| `Scan()` | 兼容包装 | 等价于 `DiscoverTopology` |
+| `EnterMaintenance()` | 兼容包装 | 等价于 `EnterPreOpMaintenance` |
+| `PrepareRun()` | 兼容包装 | 等价于 `EnterSafeOpReady` |
+| `StartOperation()` | 兼容包装 | 等价于 `EnterRun` |
+| `Stop()` | 兼容包装 | 等价于 `Shutdown` |
 
 调用约束：
 
@@ -50,10 +65,10 @@ mo_ecat::MoEcatMaster
 void Service();
 ```
 
-当前实现中，`Service()` 会根据主站状态执行单步服务：
+当前实现中，`Service()` 会根据主站运行时状态执行单步服务：
 
-- `Maintenance`：检查从站状态。
-- `Operational`：执行一次 PDO 周期并检查从站状态。
+- 准备态 / 稳定 / PREOP维护：检查从站状态。
+- 运行态 / 稳定：执行一次 PDO 周期并检查从站状态。
 - 其他状态：基本不做周期动作。
 
 调用约束：
@@ -67,10 +82,10 @@ void Service();
 
 | 接口 | 当前状态 | 说明 |
 |------|----------|------|
-| `GetState()` | 已实现 | 返回 `MasterState` |
+| `GetRuntimeState()` | 已实现 | 返回 `MasterRuntimeState`（含 `MasterMode`/`TransitionStage`/`PrepareStage`） |
 | `GetSlaveCount()` | 已实现 | 返回当前从站数量 |
 | `GetSlaveInfos()` | 已实现 | 返回从站静态信息列表 |
-| `GetSnapshot()` | 部分实现 | 当前填充 state/slaves，`last_fault` 尚未填充 |
+| `GetSnapshot()` | 部分实现 | 当前填充 `runtime_state` 和 `slaves`；`last_fault` 字段尚未填充 |
 
 UI 展示状态时，应优先通过 bridge 统一拉取和缓存，避免多个 UI 控件直接并发访问 core。
 
@@ -93,7 +108,7 @@ UI 展示状态时，应优先通过 bridge 统一拉取和缓存，避免多个
 
 | 回调 | 当前状态 | 触发线程/说明 |
 |------|----------|---------------|
-| `on_state_changed` | 已实现 | 在 `Service()` 调用线程中触发 |
+| `on_runtime_state_changed` | 已实现 | 在主站运行时状态变化时触发，触发线程与 `Service()` 调用线程相同 |
 | `on_log_message` | 已实现 | 在 Logger 后台线程中触发 |
 | `on_fault` | 已定义，当前未触发 | 需要后续实现补齐 |
 | `on_feedback` | 已定义，当前未触发 | 需要后续实现补齐周期反馈发布 |
@@ -126,20 +141,25 @@ UI 可以提供配置界面，但必须通过 bridge 显式转换为 `EcMasterCo
 
 | 类型 | 用途 |
 |------|------|
-| `MasterState` | 主站生命周期状态 |
+| `MasterRuntimeState` | 主站运行时状态（`MasterMode` + `TransitionStage` + `PrepareStage`） |
 | `SlaveIdentity` | 预期从站身份校验 |
 | `SlaveInfo` | 扫描后的从站静态信息 |
 | `SlaveFeedback` | 周期反馈数据结构，当前回调尚未发布 |
-| `MasterSnapshot` | 主站状态和从站列表快照 |
+| `MasterSnapshot` | 主站运行时状态和从站列表快照 |
 
 这些结构可以跨 bridge 复制到 UI 侧，但 UI 不应修改后再假设 core 内部状态也被同步。
 
-## 10. 后续接口补齐建议
+## 10. 调用线程约定
+
+`MoEcatMaster` 当前为单线程模型：
+
+- 生命周期接口、`Service()`、`on_runtime_state_changed` 应在同一个 worker 线程中串行调用。
+- `on_log_message` 由 Logger 后台线程触发，但内部已实现线程安全，bridge 只需做线程切换转发给 UI。
+
+## 11. 后续接口补齐建议
 
 为支持 UI 第一版，建议优先补齐：
 
 1. `on_fault` 触发逻辑，至少在进入 Fault/EmergencyStop 时发布原因。
 2. `MasterSnapshot::last_fault` 填充逻辑。
 3. `on_feedback` 周期发布逻辑，并遵守 `feedback_publish_hz`。
-4. 明确 `MoEcatMaster` 是否要求单线程访问；如果要求，应在文档和代码注释中固定下来。
-

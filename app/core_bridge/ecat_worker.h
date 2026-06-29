@@ -10,7 +10,6 @@
 namespace mo_ecat
 {
 class MoEcatMaster;
-enum class MasterState;
 struct MasterRuntimeState;
 struct SlaveInfo;
 } // namespace mo_ecat

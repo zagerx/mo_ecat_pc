@@ -59,7 +59,7 @@ public slots:
     void dumpPdoMapping(int slaveId);
 
 signals:
-    void masterStateChanged(UiMasterState state);
+    void MasterStateChanged(UiRuntimeState state);
     void slaveListUpdated(QVector<UiSlaveInfo> slaves);
     void logReceived(UiLogRecord record);
     void sdoReadFinished(SdoReadResult result);
@@ -114,7 +114,7 @@ bridge 负责把 core 类型转换为 UI 类型：
 
 | core 类型 | bridge/UI 类型 |
 |-----------|----------------|
-| `mo_ecat::MasterState` | `UiMasterState` 或 enum wrapper |
+| `mo_ecat::MasterRuntimeState` | `UiRuntimeState` |
 | `mo_ecat::SlaveInfo` | `UiSlaveInfo` / `SlaveTableModel` |
 | `mo_ecat::SlaveFeedback` | `UiSlaveFeedback` / feedback model |
 | core log callback | `UiLogRecord` / `LogModel` |
