@@ -24,20 +24,20 @@ EcatQtBridge::EcatQtBridge(QObject *parent)
     connect(&worker_thread_, &QThread::finished,
             worker_, &QObject::deleteLater);
 
-    connect(this, &EcatQtBridge::InitializeAdapterRequested,
-            worker_, &EcatWorker::InitializeAdapter);
-    connect(this, &EcatQtBridge::ScanRequested,
-            worker_, &EcatWorker::Scan);
-    connect(this, &EcatQtBridge::EnterMaintenanceRequested,
-            worker_, &EcatWorker::EnterMaintenance);
-    connect(this, &EcatQtBridge::PrepareRunRequested,
-            worker_, &EcatWorker::PrepareRun);
-    connect(this, &EcatQtBridge::StartOperationRequested,
-            worker_, &EcatWorker::StartOperation);
+    connect(this, &EcatQtBridge::EnterPrepareRequested,
+            worker_, &EcatWorker::EnterPrepare);
+    connect(this, &EcatQtBridge::DiscoverTopologyRequested,
+            worker_, &EcatWorker::DiscoverTopology);
+    connect(this, &EcatQtBridge::EnterPreOpMaintenanceRequested,
+            worker_, &EcatWorker::EnterPreOpMaintenance);
+    connect(this, &EcatQtBridge::EnterSafeOpReadyRequested,
+            worker_, &EcatWorker::EnterSafeOpReady);
+    connect(this, &EcatQtBridge::EnterRunRequested,
+            worker_, &EcatWorker::EnterRun);
     connect(this, &EcatQtBridge::BackToMaintenanceRequested,
             worker_, &EcatWorker::BackToMaintenance);
-    connect(this, &EcatQtBridge::StopRequested,
-            worker_, &EcatWorker::StopMaster);
+    connect(this, &EcatQtBridge::ShutdownRequested,
+            worker_, &EcatWorker::Shutdown);
 
     connect(worker_, &EcatWorker::MasterStateChanged,
             this, &EcatQtBridge::MasterStateChanged);
@@ -53,34 +53,34 @@ EcatQtBridge::EcatQtBridge(QObject *parent)
 
 EcatQtBridge::~EcatQtBridge()
 {
-    emit StopRequested();
+    emit ShutdownRequested();
     worker_thread_.quit();
     worker_thread_.wait();
 }
 
-void EcatQtBridge::InitializeAdapter(const UiMasterConfig &config)
+void EcatQtBridge::EnterPrepare(const UiMasterConfig &config)
 {
-    emit InitializeAdapterRequested(config);
+    emit EnterPrepareRequested(config);
 }
 
-void EcatQtBridge::Scan()
+void EcatQtBridge::DiscoverTopology()
 {
-    emit ScanRequested();
+    emit DiscoverTopologyRequested();
 }
 
-void EcatQtBridge::EnterMaintenance()
+void EcatQtBridge::EnterPreOpMaintenance()
 {
-    emit EnterMaintenanceRequested();
+    emit EnterPreOpMaintenanceRequested();
 }
 
-void EcatQtBridge::PrepareRun()
+void EcatQtBridge::EnterSafeOpReady()
 {
-    emit PrepareRunRequested();
+    emit EnterSafeOpReadyRequested();
 }
 
-void EcatQtBridge::StartOperation()
+void EcatQtBridge::EnterRun()
 {
-    emit StartOperationRequested();
+    emit EnterRunRequested();
 }
 
 void EcatQtBridge::BackToMaintenance()
@@ -88,9 +88,9 @@ void EcatQtBridge::BackToMaintenance()
     emit BackToMaintenanceRequested();
 }
 
-void EcatQtBridge::Stop()
+void EcatQtBridge::Shutdown()
 {
-    emit StopRequested();
+    emit ShutdownRequested();
 }
 
 } // namespace mo_ecat_pc

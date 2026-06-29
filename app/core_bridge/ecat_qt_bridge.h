@@ -18,13 +18,13 @@ public:
     ~EcatQtBridge() override;
 
 public slots:
-    void InitializeAdapter(const UiMasterConfig &config);
-    void Scan();
-    void EnterMaintenance();
-    void PrepareRun();
-    void StartOperation();
+    void EnterPrepare(const UiMasterConfig &config);
+    void DiscoverTopology();
+    void EnterPreOpMaintenance();
+    void EnterSafeOpReady();
+    void EnterRun();
     void BackToMaintenance();
-    void Stop();
+    void Shutdown();
 
 signals:
     void MasterStateChanged(UiRuntimeState state);
@@ -32,13 +32,13 @@ signals:
     void LogReceived(UiLogRecord record);
     void OperationFailed(QString command, QString reason);
 
-    void InitializeAdapterRequested(UiMasterConfig config);
-    void ScanRequested();
-    void EnterMaintenanceRequested();
-    void PrepareRunRequested();
-    void StartOperationRequested();
+    void EnterPrepareRequested(UiMasterConfig config);
+    void DiscoverTopologyRequested();
+    void EnterPreOpMaintenanceRequested();
+    void EnterSafeOpReadyRequested();
+    void EnterRunRequested();
     void BackToMaintenanceRequested();
-    void StopRequested();
+    void ShutdownRequested();
 
 private:
     QThread worker_thread_;

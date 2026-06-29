@@ -20,13 +20,13 @@ public:
     explicit MainWindow(QWidget *parent = nullptr);
 
 signals:
-    void initializeRequested(UiMasterConfig config);
-    void scanRequested();
-    void enterMaintenanceRequested();
-    void prepareRunRequested();
-    void startOperationRequested();
+    void enterPrepareRequested(UiMasterConfig config);
+    void discoverTopologyRequested();
+    void enterPreOpMaintenanceRequested();
+    void enterSafeOpReadyRequested();
+    void enterRunRequested();
     void backToMaintenanceRequested();
-    void stopRequested();
+    void shutdownRequested();
 
 public slots:
     void OnMasterStateChanged(UiRuntimeState state);

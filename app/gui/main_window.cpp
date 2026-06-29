@@ -75,15 +75,15 @@ MainWindow::MainWindow(QWidget *parent)
     setCentralWidget(central);
 
     connect(initialize_button_, &QPushButton::clicked, this, [this] {
-        emit initializeRequested(ReadConfig());
+        emit enterPrepareRequested(ReadConfig());
     });
-    connect(scan_button_, &QPushButton::clicked, this, &MainWindow::scanRequested);
+    connect(scan_button_, &QPushButton::clicked, this, &MainWindow::discoverTopologyRequested);
     connect(maintenance_button_, &QPushButton::clicked,
-            this, &MainWindow::enterMaintenanceRequested);
-    connect(prepare_button_, &QPushButton::clicked, this, &MainWindow::prepareRunRequested);
-    connect(start_button_, &QPushButton::clicked, this, &MainWindow::startOperationRequested);
+            this, &MainWindow::enterPreOpMaintenanceRequested);
+    connect(prepare_button_, &QPushButton::clicked, this, &MainWindow::enterSafeOpReadyRequested);
+    connect(start_button_, &QPushButton::clicked, this, &MainWindow::enterRunRequested);
     connect(back_button_, &QPushButton::clicked, this, &MainWindow::backToMaintenanceRequested);
-    connect(stop_button_, &QPushButton::clicked, this, &MainWindow::stopRequested);
+    connect(stop_button_, &QPushButton::clicked, this, &MainWindow::shutdownRequested);
 }
 
 void MainWindow::OnMasterStateChanged(UiRuntimeState state)

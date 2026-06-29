@@ -26,13 +26,13 @@ public:
 
 public slots:
     void StartServiceLoop();
-    void InitializeAdapter(UiMasterConfig config);
-    void Scan();
-    void EnterMaintenance();
-    void PrepareRun();
-    void StartOperation();
+    void EnterPrepare(UiMasterConfig config);
+    void DiscoverTopology();
+    void EnterPreOpMaintenance();
+    void EnterSafeOpReady();
+    void EnterRun();
     void BackToMaintenance();
-    void StopMaster();
+    void Shutdown();
 
 signals:
     void MasterStateChanged(UiRuntimeState state);

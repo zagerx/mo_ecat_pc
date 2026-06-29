@@ -127,7 +127,7 @@ EcatWorker::~EcatWorker()
         service_timer_->stop();
     }
     if (master_ != nullptr) {
-        master_->Stop();
+        master_->Shutdown();
     }
 }
 
@@ -145,7 +145,7 @@ void EcatWorker::StartServiceLoop()
     EmitRuntimeState();
 }
 
-void EcatWorker::InitializeAdapter(UiMasterConfig config)
+void EcatWorker::EnterPrepare(UiMasterConfig config)
 {
     EnsureMaster();
 
@@ -162,40 +162,40 @@ void EcatWorker::InitializeAdapter(UiMasterConfig config)
     core_config.use_dc = config.use_dc;
     core_config.log_sink = mo_ecat::LogSinkMode::kCallback;
 
-    const bool ok = master_->InitializeAdapter(core_config);
-    ReportCommandResult(QStringLiteral("InitializeAdapter"), ok);
+    const bool ok = master_->EnterPrepare(core_config);
+    ReportCommandResult(QStringLiteral("EnterPrepare"), ok);
     RefreshSnapshot();
 }
 
-void EcatWorker::Scan()
+void EcatWorker::DiscoverTopology()
 {
     EnsureMaster();
-    const bool ok = master_->Scan();
-    ReportCommandResult(QStringLiteral("Scan"), ok);
+    const bool ok = master_->DiscoverTopology();
+    ReportCommandResult(QStringLiteral("DiscoverTopology"), ok);
     RefreshSnapshot();
 }
 
-void EcatWorker::EnterMaintenance()
+void EcatWorker::EnterPreOpMaintenance()
 {
     EnsureMaster();
-    const bool ok = master_->EnterMaintenance();
-    ReportCommandResult(QStringLiteral("EnterMaintenance"), ok);
+    const bool ok = master_->EnterPreOpMaintenance();
+    ReportCommandResult(QStringLiteral("EnterPreOpMaintenance"), ok);
     RefreshSnapshot();
 }
 
-void EcatWorker::PrepareRun()
+void EcatWorker::EnterSafeOpReady()
 {
     EnsureMaster();
-    const bool ok = master_->PrepareRun();
-    ReportCommandResult(QStringLiteral("PrepareRun"), ok);
+    const bool ok = master_->EnterSafeOpReady();
+    ReportCommandResult(QStringLiteral("EnterSafeOpReady"), ok);
     RefreshSnapshot();
 }
 
-void EcatWorker::StartOperation()
+void EcatWorker::EnterRun()
 {
     EnsureMaster();
-    const bool ok = master_->StartOperation();
-    ReportCommandResult(QStringLiteral("StartOperation"), ok);
+    const bool ok = master_->EnterRun();
+    ReportCommandResult(QStringLiteral("EnterRun"), ok);
     RefreshSnapshot();
 }
 
@@ -207,13 +207,13 @@ void EcatWorker::BackToMaintenance()
     RefreshSnapshot();
 }
 
-void EcatWorker::StopMaster()
+void EcatWorker::Shutdown()
 {
     if (master_ == nullptr) {
         return;
     }
 
-    master_->Stop();
+    master_->Shutdown();
     RefreshSnapshot();
 }
 
@@ -272,7 +272,7 @@ void EcatWorker::ReportCommandResult(const QString &command, bool ok)
     }
 
     QString reason = command + QStringLiteral(" failed");
-    if (command == QStringLiteral("InitializeAdapter") && !HasRawSocketPermission()) {
+    if (command == QStringLiteral("EnterPrepare") && !HasRawSocketPermission()) {
         reason += QStringLiteral(
             ". EtherCAT raw socket access requires sudo or CAP_NET_RAW.");
     }

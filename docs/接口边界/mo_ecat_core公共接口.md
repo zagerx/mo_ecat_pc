@@ -42,17 +42,6 @@ mo_ecat::MoEcatMaster
 | `RequestFault(const std::string&)` | 已实现 | 外部请求进入 Fault |
 | `RequestEmergencyStop(const std::string&)` | 已实现 | 外部请求进入 EmergencyStop |
 
-### 3.2 旧生命周期接口（兼容包装，内部转调新接口）
-
-| 接口 | 当前状态 | 说明 |
-|------|----------|------|
-| `InitializeAdapter(const EcMasterConfig&)` | 兼容包装 | 等价于 `EnterPrepare` |
-| `Scan()` | 兼容包装 | 等价于 `DiscoverTopology` |
-| `EnterMaintenance()` | 兼容包装 | 等价于 `EnterPreOpMaintenance` |
-| `PrepareRun()` | 兼容包装 | 等价于 `EnterSafeOpReady` |
-| `StartOperation()` | 兼容包装 | 等价于 `EnterRun` |
-| `Stop()` | 兼容包装 | 等价于 `Shutdown` |
-
 调用约束：
 
 - 生命周期接口应在 `MoEcatMaster` 所在线程调用。
